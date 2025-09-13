@@ -1,0 +1,21 @@
+{
+  "name": "qq-phishing-demo",
+  "version": "1.0.0",
+  "description": "QQ登录钓鱼教学演示",
+  "main": "api/login.js",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vercel": "^28.4.9"
+  },
+  "keywords": [
+    "security",
+    "education",
+    "phishing",
+    "demo"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
