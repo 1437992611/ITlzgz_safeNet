@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QQ登录 - 网络安全教学演示</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="warning-banner">
+            <h2><i class="fas fa-exclamation-triangle"></i> 网络安全教学演示 - 请勿输入真实账号密码</h2>
+            <p>此页面仅为教学演示用途，展示网络钓鱼攻击的原理</p>
+        </div>
+        
+        <div class="login-container">
+            <div class="login-left">
+                <h2>QQ安全提示</h2>
+                <p><i class="fas fa-check-circle"></i> 请勿在不明网站输入您的QQ账号和密码</p>
+                <p><i class="fas fa-check-circle"></i> 确认网址是否为 https://im.qq.com/</p>
+                <p><i class="fas fa-check-circle"></i> 检查网站安全证书</p>
+                <p><i class="fas fa-check-circle"></i> 开启QQ安全中心保护</p>
+            </div>
+            
+            <div class="login-form">
+                <div class="logo">
+                    <h1><i class="fab fa-qq"></i> QQ登录</h1>
+                </div>
+                
+                <form id="loginForm">
+                    <div class="input-group">
+                        <label for="username"><i class="fas fa-user"></i> QQ号码</label>
+                        <input type="text" id="username" placeholder="请输入QQ号码" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="password"><i class="fas fa-lock"></i> 密码</label>
+                        <input type="password" id="password" placeholder="请输入密码" required>
+                    </div>
+                    
+                    <div class="remember">
+                        <input type="checkbox" id="remember">
+                        <label for="remember">记住密码</label>
+                    </div>
+                    
+                    <button type="submit" class="login-btn">登录</button>
+                </form>
+                
+                <div class="links">
+                    <a href="#"><i class="fas fa-key"></i> 找回密码</a>
+                    <a href="teacher.html"><i class="fas fa-chalkboard-teacher"></i> 教师面板</a>
+                    <a href="#"><i class="fas fa-comment"></i> 意见反馈</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="demo-info">
+            <h3><i class="fas fa-info-circle"></i> 网络钓鱼教学演示说明</h3>
+            <p>此页面模拟了网络钓鱼攻击，用于教学演示目的：</p>
+            <ul>
+                <li>此页面会记录输入的"账号"和"密码"，但仅存储在浏览器中</li>
+                <li>教师可以通过此演示展示网络钓鱼的工作原理</li>
+                <li>演示如何识别钓鱼网站：检查URL、寻找安全标识、注意页面设计细节</li>
+                <li>展示了为什么不应在不明网站输入敏感信息</li>
+            </ul>
+            <p><strong>真实环境中，钓鱼网站会试图模仿真实登录页面，但通常会有细微差别，如URL不同、设计细节差异、缺少安全标识等。</strong></p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // 处理表单提交
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const time = new Date().toLocaleString();
+            
+            // 保存到本地存储
+            saveLoginData(username, password, time);
+            
+            // 显示提示
+            alert(`教学演示：\n如果这是真实钓鱼攻击，您的凭据将被窃取\nQQ号码: ${username}\n密码: ${password}\n\n此演示仅将数据存储在本地浏览器中。`);
+            
+            // 重置表单
+            this.reset();
+            
+            // 重定向到教师页面（可选）
+            // window.location.href = "teacher.html";
+        });
+    </script>
+</body>
+</html>
